@@ -1,0 +1,60 @@
+{
+  "name": "@tonpay/sdk",
+  "version": "0.0.1",
+  "description": "Tonpay JavaScript SDK",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "scripts": {
+    "build": "npm run build:esm && npm run build:cjs",
+    "build:esm": "tsc",
+    "build:cjs": "tsc --module commonjs --outDir dist/cjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TheTonpay/tonpay-js-sdk.git"
+  },
+  "keywords": [
+    "tonpay",
+    "payments",
+    "sdk",
+    "typescript",
+    "blockchain",
+    "ton",
+    "toncoin",
+    "ecommerce",
+    "crypto",
+    "cryptocurrency",
+    "gateway",
+    "payment"
+  ],
+  "author": "Arterialist",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TheTonpay/tonpay-js-sdk/issues"
+  },
+  "homepage": "https://github.com/TheTonpay/tonpay-js-sdk#readme",
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "dependencies": {
+    "ton": "^13.3.0",
+    "ton-core": "^0.48.0",
+    "@tonpay/core": "^0.0.8",
+    "@orbs-network/ton-access": "^2.3.1"
+  },
+  "devDependencies": {
+    "typescript": "*",
+    "@typescript-eslint/eslint-plugin": "^5.0.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-config-standard-with-typescript": "^32.0.0",
+    "eslint-plugin-import": "^2.25.2",
+    "eslint-plugin-n": "^15.0.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "eslint-plugin-promise": "^6.0.0",
+    "eslint-plugin-react": "^7.32.1",
+    "prettier": "^2.4.1"
+  }
+}
