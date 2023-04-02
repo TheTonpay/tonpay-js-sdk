@@ -30,11 +30,17 @@ const store = Tonpay.getStore(
   "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N"
 );
 
-// initiate a purchase request and get the invoice address even before it's created on-chain
-const invoiceAddress = await store.requestPurchase(
+// get a payment link and provide it in any form (button, QR code) to the customer
+const paymentLink = await store.getRequestPurchaseLink({
   "test_invoice_id",
   5 // TON
-);
+}, "tonkeeper");
+
+// or initiate a purchase request and get the invoice address even before it's created on-chain
+const invoiceAddress = await store.requestPurchase({
+  "test_invoice_id",
+  5 // TON
+});
 
 // now you can monitor invoice status manually
 const invoice = tonpay.getInvoice(invoiceAddress);
