@@ -1,4 +1,5 @@
 import {
+  DeeplinkFormat,
   INVOICE_CODE,
   STORE_CODE,
   STORE_VERSION,
@@ -13,6 +14,7 @@ import {
   buildInvoiceCodeUpgradeMessage,
   buildIssueInvoiceMessage,
   buildRequestPurchaseMessage,
+  buildUserPaymentLink,
   precalculateInvoiceAddress,
 } from "@tonpay/core";
 import { TonClient } from "ton";
@@ -107,6 +109,18 @@ export class Store {
       ZERO_ADDRESS,
       invoice.invoiceId,
       Number(toNano(`${invoice.amount}`))
+    );
+  }
+
+  getRequestPurchaseLink(
+    invoice: PurchaseRequestInvoice,
+    format: DeeplinkFormat = "ton"
+  ) {
+    return buildUserPaymentLink(
+      this.wrapper.address.toString(),
+      invoice.amount,
+      invoice.invoiceId,
+      format
     );
   }
 
