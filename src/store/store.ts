@@ -88,6 +88,7 @@ export class Store {
         invoice.hasCustomer,
         invoice.customer,
         invoice.invoiceId,
+        invoice.metadata,
         BigInt(invoice.amount)
       ),
     });
@@ -108,6 +109,7 @@ export class Store {
       false,
       ZERO_ADDRESS,
       invoice.invoiceId,
+      invoice.metadata,
       Number(toNano(`${invoice.amount}`))
     );
   }
@@ -143,8 +145,8 @@ export class Store {
     });
   }
 
-  getData(): Promise<StoreData> {
-    return this.openedContract.getStoreData();
+  getData(version: number = STORE_VERSION): Promise<StoreData> {
+    return this.openedContract.getStoreData(version);
   }
 
   getName(): Promise<string> {

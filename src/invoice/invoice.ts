@@ -35,6 +35,7 @@ export class Invoice {
     hasCustomer: boolean,
     customer: string,
     invoiceId: string,
+    metadata: string,
     amount: bigint
   ) {
     await this.openedContract.sendEditInvoice(this.sender, {
@@ -43,6 +44,7 @@ export class Invoice {
         hasCustomer,
         customer,
         invoiceId,
+        metadata,
         amount
       ),
     });
@@ -98,6 +100,10 @@ export class Invoice {
     return this.openedContract.getInvoiceId();
   }
 
+  async getMetadata(): Promise<string> {
+    return this.openedContract.getInvoiceMetadata();
+  }
+
   async getAmount(): Promise<number> {
     return this.openedContract.getInvoiceAmount();
   }
@@ -114,8 +120,8 @@ export class Invoice {
     return this.openedContract.getInvoiceVersion();
   }
 
-  async getData(): Promise<InvoiceData> {
-    return this.openedContract.getInvoiceData();
+  async getData(version: number = INVOICE_VERSION): Promise<InvoiceData> {
+    return this.openedContract.getInvoiceData(version);
   }
 
   async shouldUpgrade(): Promise<boolean> {
