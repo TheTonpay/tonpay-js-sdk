@@ -59,11 +59,18 @@ export class Store {
     name: string,
     description: string,
     image: string,
+    webhook: string,
     mccCode: number
   ) {
     await this.openedContract.sendEditStore(this.sender, {
       value: StoreFees.EDIT,
-      message: buildEditStoreMessage(name, description, image, mccCode),
+      message: buildEditStoreMessage(
+        name,
+        description,
+        image,
+        webhook,
+        mccCode
+      ),
     });
   }
 
@@ -145,8 +152,8 @@ export class Store {
     });
   }
 
-  getData(version: number = STORE_VERSION): Promise<StoreData> {
-    return this.openedContract.getStoreData(version);
+  getOwner(): Promise<Address> {
+    return this.openedContract.getStoreOwner();
   }
 
   getName(): Promise<string> {
@@ -161,12 +168,12 @@ export class Store {
     return this.openedContract.getStoreImage();
   }
 
-  getMccCode(): Promise<number> {
-    return this.openedContract.getStoreMccCode();
+  getWebhook(): Promise<string> {
+    return this.openedContract.getStoreWebhook();
   }
 
-  getOwner(): Promise<Address> {
-    return this.openedContract.getStoreOwner();
+  getMccCode(): Promise<number> {
+    return this.openedContract.getStoreMccCode();
   }
 
   isActive(): Promise<boolean> {
@@ -180,6 +187,10 @@ export class Store {
   async getInvoiceCode(asBase64 = false): Promise<Cell | string> {
     const code = await this.openedContract.getStoreInvoiceCode();
     return asBase64 ? code.toBoc().toString("base64") : code;
+  }
+
+  getData(version: number = STORE_VERSION): Promise<StoreData> {
+    return this.openedContract.getStoreData(version);
   }
 
   async shouldUpgradeSelf(): Promise<boolean> {
