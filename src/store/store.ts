@@ -106,7 +106,8 @@ export class Store {
       value: toNano(`${invoice.amount}`) + StoreFees.REQUEST_PURCHASE,
       message: buildRequestPurchaseMessage(
         invoice.invoiceId,
-        toNano(`${invoice.amount}`)
+        toNano(`${invoice.amount}`),
+        invoice.metadata
       ),
     });
     const merchantAddress = await this.getOwner();
@@ -116,7 +117,7 @@ export class Store {
       false,
       ZERO_ADDRESS,
       invoice.invoiceId,
-      invoice.metadata,
+      invoice.metadata ?? "",
       Number(toNano(`${invoice.amount}`))
     );
   }
