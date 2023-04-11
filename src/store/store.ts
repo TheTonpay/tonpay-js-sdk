@@ -27,7 +27,7 @@ export const StoreFees = {
   ACTIVATE: toNano("0.005"),
   DEACTIVATE: toNano("0.005"),
   ISSUE_INVOICE: toNano("0.02"),
-  REQUEST_PURCHASE: toNano("0.04"),
+  REQUEST_PURCHASE: toNano("0.05"),
   FULL_UPGRADE: toNano("0.005"),
   INVOICE_UPGRADE: toNano("0.005"),
 };
@@ -130,6 +130,7 @@ export class Store {
       this.wrapper.address.toString(),
       invoice.amount,
       invoice.invoiceId,
+      Number(StoreFees.REQUEST_PURCHASE),
       format
     );
   }
