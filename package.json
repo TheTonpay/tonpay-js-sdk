@@ -1,6 +1,6 @@
 {
   "name": "@tonpay/sdk",
-  "version": "0.1.7",
+  "version": "0.2.7",
   "description": "Tonpay JavaScript SDK",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -42,8 +42,8 @@
   "dependencies": {
     "ton": "^13.3.0",
     "ton-core": "^0.48.0",
-    "@tonpay/core": "^0.2.12",
-    "@orbs-network/ton-access": "^2.3.1"
+    "@tonpay/core": "^0.3.12",
+    "@orbs-network/ton-access": "^2.3.3"
   },
   "devDependencies": {
     "typescript": "*",
