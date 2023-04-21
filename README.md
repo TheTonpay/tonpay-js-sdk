@@ -14,12 +14,18 @@ or with yarn
 yarn add @tonpay/sdk
 ```
 
-## Usage
+## Full documentation
+
+Full documentation for this SDK is available on [GitBook](https://tonpay.gitbook.io/tonpay-sdk/).
+
+
+## Example usage
 
 ```ts
 import { Tonpay } from "@tonpay/sdk";
 
 // implement a Sender interface from 'ton' library or use @tonpay/react package for useSender() hook
+// hint: you don't need sender if you don't plan to interact with the TON Blockchain (i.e. if you only want to generate payment links or fetch info)
 const sender = buildSender();
 
 // create Tonpay instance
@@ -37,13 +43,12 @@ const paymentLink = await store.getRequestPurchaseLink({
 }, "tonkeeper");
 
 // or initiate a purchase request and get the invoice address even before it's created on-chain
-const invoiceAddress = await store.requestPurchase({
+const invoice = await store.requestPurchase({
   "test_invoice_id",
   5 // TON
 });
 
 // now you can monitor invoice status manually
-const invoice = tonpay.getInvoice(invoiceAddress);
 const isPaid = await invoice.isPaid();
 
 // or redirect to hosted checkout page that'll display the payment statue automatically
