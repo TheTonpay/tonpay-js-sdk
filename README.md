@@ -26,7 +26,7 @@ const sender = buildSender();
 const tonpay = Tonpay.create("testnet", sender);
 
 // get your interactive store by address
-const store = Tonpay.getStore(
+const store = tonpay.getStore(
   "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N"
 );
 
