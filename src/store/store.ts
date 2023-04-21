@@ -20,6 +20,7 @@ import {
 import { TonClient } from "ton";
 import { Address, Cell, OpenedContract, Sender, toNano } from "ton-core";
 import { InvoiceInfo, PurchaseRequestInvoice } from "../types/invoice";
+import { Invoice } from "../invoice/invoice";
 
 export const StoreFees = {
   DEPLOY: toNano("0.005"),
@@ -89,6 +90,7 @@ export class Store {
   }
 
   async issueInvoice(invoice: InvoiceInfo) {
+  async issueInvoice(invoice: InvoiceInfo): Promise<Invoice> {
     await this.openedContract.sendIssueInvoice(this.sender, {
       value: StoreFees.ISSUE_INVOICE,
       message: buildIssueInvoiceMessage(
@@ -96,12 +98,28 @@ export class Store {
         invoice.customer,
         invoice.invoiceId,
         invoice.metadata,
-        BigInt(invoice.amount)
+        toNano(`${invoice.amount}`)
       ),
     });
+
+    const merchantAddress = await this.getOwner();
+    return new Invoice(
+      precalculateInvoiceAddress(
+        this.wrapper.address.toString(),
+        merchantAddress.toString(),
+        invoice.hasCustomer,
+        invoice.customer,
+        invoice.invoiceId,
+        invoice.metadata,
+        Number(toNano(`${invoice.amount}`))
+      ).toString(),
+      this.sender,
+      this.tonClient
+    );
   }
 
   async requestPurchase(invoice: PurchaseRequestInvoice) {
+  async requestPurchase(invoice: PurchaseRequestInvoice): Promise<Invoice> {
     await this.openedContract.sendRequestPurchase(this.sender, {
       value: toNano(`${invoice.amount}`) + StoreFees.REQUEST_PURCHASE,
       message: buildRequestPurchaseMessage(
@@ -110,15 +128,20 @@ export class Store {
         invoice.metadata
       ),
     });
+
     const merchantAddress = await this.getOwner();
-    return precalculateInvoiceAddress(
-      this.wrapper.address.toString(),
-      merchantAddress.toString(),
-      false,
-      ZERO_ADDRESS,
-      invoice.invoiceId,
-      invoice.metadata ?? "",
-      Number(toNano(`${invoice.amount}`))
+    return new Invoice(
+      precalculateInvoiceAddress(
+        this.wrapper.address.toString(),
+        merchantAddress.toString(),
+        false,
+        ZERO_ADDRESS,
+        invoice.invoiceId,
+        invoice.metadata ?? "",
+        Number(toNano(`${invoice.amount}`))
+      ).toString(),
+      this.sender,
+      this.tonClient
     );
   }
 
