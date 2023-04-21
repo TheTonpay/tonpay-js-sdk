@@ -56,6 +56,27 @@ export class Store {
     await this.openedContract.sendDeploy(this.sender, StoreFees.DEPLOY);
   }
 
+  /**
+   * @description This method edits the store data
+   *
+   * @param name - New store name
+   * @param description - New store description
+   * @param image - New store image URL
+   * @param webhook - New store webhook URL
+   * @param mccCode - New store MCC code
+   *
+   * @example
+   * ```typescript
+   * await store.edit(
+   *     "New store name",
+   *     "New store description",
+   *     "https://example.com/logo.png",
+   *     "https://example.com/webhook",
+   *     1337
+   * );
+   * ```
+   *
+   **/
   async edit(
     name: string,
     description: string,
@@ -75,6 +96,15 @@ export class Store {
     });
   }
 
+  /**
+   * @description This method activates the store
+   *
+   * @example
+   * ```typescript
+   *
+   * await store.activate();
+   * ```
+   */
   async activate() {
     await this.openedContract.sendActivateStore(this.sender, {
       value: StoreFees.ACTIVATE,
@@ -82,6 +112,15 @@ export class Store {
     });
   }
 
+  /**
+   * @description This method deactivates the store
+   *
+   * @example
+   * ```typescript
+   *
+   * await store.deactivate();
+   * ```
+   */
   async deactivate() {
     await this.openedContract.sendActivateStore(this.sender, {
       value: StoreFees.DEACTIVATE,
@@ -89,7 +128,24 @@ export class Store {
     });
   }
 
-  async issueInvoice(invoice: InvoiceInfo) {
+  /**
+   * @description This method issues the invoice
+   *
+   * @param {InvoiceInfo} invoice - invoice info. Amount must be specified in TON, not nanoTON!
+   *
+   * @returns {Promise<Invoice>} Invoice object after the transaction is sent
+   *
+   * @example
+   * ```typescript
+   * const invoice = await store.issueInvoice({
+   *     hasCustomer: true, // can be false, in which case anyone will be able to pay the invoice
+   *     customer: "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N", // can be ZERO_ADDRESS if hasCustomer is false
+   *     invoiceId: "in_abcdef123456",
+   *     metadata: "",
+   *     amount: 4.2
+   * });
+   * ```
+   */
   async issueInvoice(invoice: InvoiceInfo): Promise<Invoice> {
     await this.openedContract.sendIssueInvoice(this.sender, {
       value: StoreFees.ISSUE_INVOICE,
@@ -118,7 +174,22 @@ export class Store {
     );
   }
 
-  async requestPurchase(invoice: PurchaseRequestInvoice) {
+  /**
+   * @description This method makes a purchase request to the store from the customer's side.
+   *
+   * @param invoice {PurchaseRequestInvoice} - invoice info. Amount must be specified in TON, not nanoTON!
+   *
+   * @returns {Promise<Invoice>} Invoice object after the transaction is sent
+   *
+   * @example
+   * ```typescript
+   * const invoice = await store.requestPurchase({
+   *    invoiceId: "in_abcdef123456",
+   *    metadata: "",
+   *    amount: 4.2
+   * });
+   * ```
+   */
   async requestPurchase(invoice: PurchaseRequestInvoice): Promise<Invoice> {
     await this.openedContract.sendRequestPurchase(this.sender, {
       value: toNano(`${invoice.amount}`) + StoreFees.REQUEST_PURCHASE,
@@ -145,6 +216,23 @@ export class Store {
     );
   }
 
+  /**
+   * @description This method returns the universal link for the purchase request by customer
+   *
+   * @param invoice {PurchaseRequestInvoice} - invoice info. Amount must be specified in TON, not nanoTON!
+   * @param format {DeeplinkFormat} - deeplink format. Default is "ton", can be "ton" or "tonkeeper"
+   *
+   * @returns {string} Universal link for the purchase request
+   *
+   * @example
+   * ```typescript
+   * const link = store.getRequestPurchaseLink({
+   *   invoiceId: "in_abcdef123456",
+   *   metadata: "",
+   *   amount: 4.2
+   * });
+   * ```
+   */
   getRequestPurchaseLink(
     invoice: PurchaseRequestInvoice,
     format: DeeplinkFormat = "ton"
