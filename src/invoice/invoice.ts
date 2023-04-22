@@ -60,7 +60,7 @@ export class Invoice {
     customer: string,
     invoiceId: string,
     metadata: string,
-    amount: bigint
+    amount: number
   ) {
     await this.openedContract.sendEditInvoice(this.sender, {
       value: InvoiceFees.EDIT,
@@ -69,7 +69,7 @@ export class Invoice {
         customer,
         invoiceId,
         metadata,
-        amount
+        toNano(amount.toString())
       ),
     });
   }
