@@ -24,8 +24,11 @@ export class Invoice {
   private openedContract: OpenedContract<InvoiceWrapper>;
   private tonClient: TonClient;
 
+  public address: string;
+
   public constructor(address: string, sender: Sender, tonClient: TonClient) {
     this.wrapper = InvoiceWrapper.createFromAddress(Address.parse(address));
+    this.address = address;
     this.sender = sender;
     this.tonClient = tonClient;
     this.openedContract = this.tonClient.open(this.wrapper);
