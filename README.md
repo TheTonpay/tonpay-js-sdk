@@ -51,9 +51,9 @@ const invoice = await store.requestPurchase({
 // now you can monitor invoice status manually
 const isPaid = await invoice.isPaid();
 
-// or redirect to hosted checkout page that'll display the payment statue automatically
+// or redirect to hosted checkout page that'll display the payment state automatically
 
-const hostedCheckoutUrl = `https://pay.thetonpay.app/i/${invoiceAddress}`;
+const hostedCheckoutUrl = `https://pay.thetonpay.app/i/${invoice.address}`;
 window.location.href = hostedCheckoutUrl;
 ```
 
