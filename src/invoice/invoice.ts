@@ -1,4 +1,5 @@
 import {
+  DeeplinkFormat,
   INVOICE_VERSION,
   InvoiceData,
   InvoiceWrapper,
@@ -132,12 +133,13 @@ export class Invoice {
    * const link = await invoice.getPaymentLink("tonkeeper");
    * ```
    */
-  async getPaymentLink(): Promise<string> {
+  async getPaymentLink(format: DeeplinkFormat = "ton"): Promise<string> {
     const amount = await this.getAmount();
     return buildMessageDeeplink(
       this.wrapper.address,
       BigInt(amount),
-      buildPayInvoiceMessage()
+      buildPayInvoiceMessage(),
+      format
     );
   }
 
