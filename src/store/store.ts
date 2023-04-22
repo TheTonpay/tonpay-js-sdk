@@ -39,8 +39,11 @@ export class Store {
   private openedContract: OpenedContract<StoreWrapper>;
   private tonClient: TonClient;
 
+  public address: string;
+
   public constructor(address: string, sender: Sender, tonClient: TonClient) {
     this.wrapper = StoreWrapper.createFromAddress(Address.parse(address));
+    this.address = address;
     this.sender = sender;
     this.tonClient = tonClient;
     this.openedContract = this.tonClient.open(this.wrapper);
@@ -51,6 +54,7 @@ export class Store {
       config,
       Cell.fromBase64(STORE_CODE)
     );
+    this.address = this.wrapper.address.toString();
     this.openedContract = this.tonClient.open(this.wrapper);
 
     await this.openedContract.sendDeploy(this.sender, StoreFees.DEPLOY);
