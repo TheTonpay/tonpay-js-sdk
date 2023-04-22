@@ -31,6 +31,26 @@ export class Invoice {
     this.openedContract = this.tonClient.open(this.wrapper);
   }
 
+  /**
+   * @description This method edits the invoice data
+   *
+   * @param hasCustomer - If the invoice has a customer
+   * @param customer - New customer address or ZERO_ADDRESS if hasCustomer is false
+   * @param invoiceId - New invoice ID
+   * @param metadata - New invoice metadata
+   * @param amount - New invoice amount in TON, not nanoTON!
+   *
+   * @example
+   * ```typescript
+   * await invoice.edit(
+   *   true,
+   *   "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N",
+   *   "in_abcderf654321",
+   *   "some metadata",
+   *   6.9
+   * );
+   * ```
+   */
   async edit(
     hasCustomer: boolean,
     customer: string,
@@ -50,6 +70,14 @@ export class Invoice {
     });
   }
 
+  /**
+   * @description This method activates the invoice
+   *
+   * @example
+   * ```typescript
+   * await invoice.activate();
+   * ```
+   */
   async activate() {
     await this.openedContract.sendActivateInvoice(this.sender, {
       value: InvoiceFees.ACTIVATE,
@@ -57,6 +85,14 @@ export class Invoice {
     });
   }
 
+  /**
+   * @description This method deactivates the invoice
+   *
+   * @example
+   * ```typescript
+   * await invoice.deactivate();
+   * ```
+   */
   async deactivate() {
     await this.openedContract.sendActivateInvoice(this.sender, {
       value: InvoiceFees.DEACTIVATE,
@@ -64,6 +100,16 @@ export class Invoice {
     });
   }
 
+  /**
+   * @description This method pays the invoice
+   *
+   * @param amount - Amount in TON, not nanoTON!
+   *
+   * @example
+   * ```typescript
+   * await invoice.pay(6.9);
+   * ```
+   */
   async pay(amount: number) {
     await this.openedContract.sendActivateInvoice(this.sender, {
       value: toNano(amount.toString()),
@@ -71,6 +117,18 @@ export class Invoice {
     });
   }
 
+  /**
+   * @description This method returns the payment link for the user in the specified format
+   *
+   * @param format - the deeplink format: "ton" (default) or "tonkeeper"
+   *
+   * @returns payment link in the specified format
+   *
+   * @example
+   * ```typescript
+   * const link = await invoice.getPaymentLink("tonkeeper");
+   * ```
+   */
   async getPaymentLink(): Promise<string> {
     const amount = await this.getAmount();
     return buildMessageDeeplink(
