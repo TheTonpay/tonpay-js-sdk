@@ -115,9 +115,9 @@ export class Invoice {
    * ```
    */
   async pay(amount: number) {
-    await this.openedContract.sendActivateInvoice(this.sender, {
+    await this.openedContract.sendPayInvoice(this.sender, {
       value: toNano(amount.toString()),
-      message: buildDeactivateInvoiceMessage(),
+      message: buildPayInvoiceMessage(),
     });
   }
 
