@@ -1,6 +1,7 @@
 import {
   DeeplinkFormat,
   INVOICE_CODE,
+  JettonWalletWrapper,
   STORE_CODE,
   STORE_VERSION,
   StoreConfig,
@@ -15,22 +16,26 @@ import {
   buildIssueInvoiceMessage,
   buildRequestPurchaseMessage,
   buildUserPaymentLink,
+  buildRequestPurchaseWithJettonsMessage,
+  isAddress,
   precalculateInvoiceAddress,
 } from "@tonpay/core";
 import { TonClient } from "ton";
 import { Address, Cell, OpenedContract, Sender, toNano } from "ton-core";
 import { InvoiceInfo, PurchaseRequestInvoice } from "../types/invoice";
 import { Invoice } from "../invoice/invoice";
+import { Currencies } from "../currency/currencies";
 
 export const StoreFees = {
   DEPLOY: toNano("0.005"),
   EDIT: toNano("0.005"),
   ACTIVATE: toNano("0.005"),
   DEACTIVATE: toNano("0.005"),
-  ISSUE_INVOICE: toNano("0.02"),
+  ISSUE_INVOICE: toNano("0.04"),
   REQUEST_PURCHASE: toNano("0.05"),
   FULL_UPGRADE: toNano("0.006"),
   INVOICE_UPGRADE: toNano("0.006"),
+  REQUEST_PURCHASE_JETTON: toNano("0.6"),
 };
 
 export class Store {
@@ -146,7 +151,8 @@ export class Store {
    *     customer: "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N", // can be ZERO_ADDRESS if hasCustomer is false
    *     invoiceId: "in_abcdef123456",
    *     metadata: "",
-   *     amount: 4.2
+   *     amount: 4.2,
+   *     currency: Currencies.jUSDT
    * });
    * ```
    */
@@ -158,7 +164,10 @@ export class Store {
         invoice.customer,
         invoice.invoiceId,
         invoice.metadata,
-        toNano(`${invoice.amount}`)
+        BigInt(invoice.amount * Math.pow(10, invoice.currency.decimals)),
+        invoice.currency == Currencies.TON,
+        invoice.currency.address,
+        invoice.currency.walletCode
       ),
     });
 
@@ -171,7 +180,10 @@ export class Store {
         invoice.customer,
         invoice.invoiceId,
         invoice.metadata,
-        Number(toNano(`${invoice.amount}`))
+        invoice.amount * Math.pow(10, invoice.currency.decimals),
+        invoice.currency == Currencies.TON,
+        invoice.currency.address,
+        invoice.currency.walletCode
       ).toString(),
       this.sender,
       this.tonClient
@@ -188,23 +200,84 @@ export class Store {
    * @example
    * ```typescript
    * const invoice = await store.requestPurchase({
-   *    invoiceId: "in_abcdef123456",
-   *    metadata: "",
-   *    amount: 4.2
+   *   invoiceId: "in_abcdef123456",
+   *   metadata: "",
+   *   amount: 4.2,
+   *   currency: Currencies.TON
    * });
    * ```
+   *
+   * @example
+   * ```typescript
+   * const invoice = await store.requestPurchase({
+   *   invoiceId: "in_abcdef123456",
+   *   metadata: "",
+   *   amount: 4.2,
+   *   currency: Currencies.jUSDT,
+   *   customer: "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N"
+   * });
    */
   async requestPurchase(invoice: PurchaseRequestInvoice): Promise<Invoice> {
-    await this.openedContract.sendRequestPurchase(this.sender, {
-      value: toNano(`${invoice.amount}`) + StoreFees.REQUEST_PURCHASE,
-      message: buildRequestPurchaseMessage(
+    const merchantAddress = await this.getOwner();
+
+    if (invoice.currency == Currencies.TON) {
+      await this.openedContract.sendRequestPurchase(this.sender, {
+        value: toNano(`${invoice.amount}`) + StoreFees.REQUEST_PURCHASE,
+        message: buildRequestPurchaseMessage(
+          invoice.invoiceId,
+          toNano(`${invoice.amount}`),
+          invoice.metadata
+        ),
+      });
+      return new Invoice(
+        precalculateInvoiceAddress(
+          this.wrapper.address.toString(),
+          merchantAddress.toString(),
+          false,
+          ZERO_ADDRESS,
+          invoice.invoiceId,
+          invoice.metadata ?? "",
+          invoice.amount * Math.pow(10, invoice.currency.decimals),
+          invoice.currency !== Currencies.TON,
+          invoice.currency.address,
+          invoice.currency.walletCode
+        ).toString(),
+        this.sender,
+        this.tonClient
+      );
+    }
+
+    if (!invoice.customer) {
+      throw new Error("Customer address is required");
+    }
+
+    if (!isAddress(invoice.customer)) {
+      throw new Error("Customer address is not a TON address");
+    }
+
+    const jettonWallet = this.tonClient.open(
+      JettonWalletWrapper.createFromConfig(
+        {
+          balance: 0,
+          masterAddress: invoice.currency.address,
+          ownerAddress: invoice.customer,
+          walletCode: invoice.currency.walletCode,
+        },
+        invoice.currency.walletCode
+      )
+    );
+    await jettonWallet.sendJettons(this.sender, {
+      value: StoreFees.REQUEST_PURCHASE_JETTON,
+      message: buildRequestPurchaseWithJettonsMessage(
         invoice.invoiceId,
-        toNano(`${invoice.amount}`),
-        invoice.metadata
+        BigInt(invoice.amount * Math.pow(10, invoice.currency.decimals)),
+        invoice.metadata,
+        this.address,
+        invoice.currency.address,
+        invoice.currency.walletCode
       ),
     });
 
-    const merchantAddress = await this.getOwner();
     return new Invoice(
       precalculateInvoiceAddress(
         this.wrapper.address.toString(),
@@ -213,7 +286,10 @@ export class Store {
         ZERO_ADDRESS,
         invoice.invoiceId,
         invoice.metadata ?? "",
-        Number(toNano(`${invoice.amount}`))
+        invoice.amount * Math.pow(10, invoice.currency.decimals),
+        true,
+        invoice.currency.address,
+        invoice.currency.walletCode
       ).toString(),
       this.sender,
       this.tonClient
@@ -221,7 +297,7 @@ export class Store {
   }
 
   /**
-   * @description This method returns the universal link for the purchase request by customer
+   * @description This method returns the universal link for the purchase request by customer. Only for TON currency.
    *
    * @param invoice {PurchaseRequestInvoice} - invoice info. Amount must be specified in TON, not nanoTON!
    * @param format {DeeplinkFormat} - deeplink format. Default is "ton", can be "ton" or "tonkeeper"

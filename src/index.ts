@@ -7,6 +7,9 @@ import { Invoice } from "./invoice/invoice";
 export * from "./store/store";
 export * from "./invoice/invoice";
 export * from "./types/invoice";
+export * from "./types/currency";
+export * from "./currency/currencies";
+export * from "./currency/wallets";
 
 export class Tonpay {
   private tonClient: TonClient;

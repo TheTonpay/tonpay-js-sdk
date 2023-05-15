@@ -42,7 +42,7 @@
   "dependencies": {
     "ton": "^13.3.0",
     "ton-core": "^0.48.0",
-    "@tonpay/core": "^0.3.13",
+    "@tonpay/core": "^0.4.15",
     "@orbs-network/ton-access": "^2.3.3"
   },
   "devDependencies": {

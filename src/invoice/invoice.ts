@@ -3,14 +3,19 @@ import {
   INVOICE_VERSION,
   InvoiceData,
   InvoiceWrapper,
+  JettonWalletWrapper,
   buildActivateInvoiceMessage,
   buildDeactivateInvoiceMessage,
   buildEditInvoiceMessage,
   buildMessageDeeplink,
   buildPayInvoiceMessage,
+  buildPayInvoiceWithJettonsMessage,
+  isAddress,
 } from "@tonpay/core";
 import { TonClient } from "ton";
-import { Address, OpenedContract, Sender, toNano } from "ton-core";
+import { Address, Cell, OpenedContract, Sender, toNano } from "ton-core";
+import { Currency } from "../types/currency";
+import { Currencies } from "../currency/currencies";
 
 export const InvoiceFees = {
   DEPLOY: toNano("0.005"),
@@ -51,7 +56,8 @@ export class Invoice {
    *   "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N",
    *   "in_abcderf654321",
    *   "some metadata",
-   *   6.9
+   *   6.9,
+   *   Currencies.jUSDT
    * );
    * ```
    */
@@ -60,7 +66,8 @@ export class Invoice {
     customer: string,
     invoiceId: string,
     metadata: string,
-    amount: number
+    amount: number,
+    currency: Currency
   ) {
     await this.openedContract.sendEditInvoice(this.sender, {
       value: InvoiceFees.EDIT,
@@ -69,7 +76,10 @@ export class Invoice {
         customer,
         invoiceId,
         metadata,
-        toNano(amount.toString())
+        BigInt(amount * Math.pow(10, currency.decimals)),
+        currency !== Currencies.TON,
+        currency.address,
+        currency.walletCode
       ),
     });
   }
@@ -107,22 +117,73 @@ export class Invoice {
   /**
    * @description This method pays the invoice
    *
-   * @param amount - Amount in TON, not nanoTON!
+   * @param {number} amount - Amount in TON, not nanoTON
+   * @param {string} customerAddress - Address of the customer that will pay the invoice. Required if currency is not TON and invoice has no assigned customer
+   * @param {Currency} currency - Currency to pay with. Default is TON
    *
    * @example
    * ```typescript
    * await invoice.pay(6.9);
    * ```
+   *
+   * @example
+   * ```typescript
+   * await invoice.pay(6.9, "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N", Currencies.jUSDT);
+   * ```
    */
-  async pay(amount: number) {
-    await this.openedContract.sendPayInvoice(this.sender, {
+  async pay(
+    amount: number,
+    customerAddress?: string,
+    currency: Currency = Currencies.TON
+  ) {
+    if (!Object.values(Currencies).includes(currency)) {
+      throw new Error("Currency is not supported");
+    }
+
+    if (currency == Currencies.TON) {
+      await this.openedContract.sendPayInvoice(this.sender, {
+        value: toNano(amount.toString()),
+        message: buildPayInvoiceMessage(),
+      });
+      return;
+    }
+
+    const ownData = await this.getData();
+
+    if (!ownData.hasCustomer) {
+      if (!customerAddress) {
+        throw new Error("Customer address is required");
+      }
+
+      if (!isAddress(customerAddress)) {
+        throw new Error("Customer address is not a TON address");
+      }
+    }
+
+    const userAddress = customerAddress || ownData.customer;
+
+    const jettonWallet = this.tonClient.open(
+      JettonWalletWrapper.createFromConfig(
+        {
+          balance: 0,
+          masterAddress: currency.address,
+          ownerAddress: userAddress,
+          walletCode: currency.walletCode,
+        },
+        currency.walletCode
+      )
+    );
+    await jettonWallet.sendJettons(this.sender, {
       value: toNano(amount.toString()),
-      message: buildPayInvoiceMessage(),
+      message: buildPayInvoiceWithJettonsMessage(
+        BigInt(`${amount}`),
+        this.address
+      ),
     });
   }
 
   /**
-   * @description This method returns the payment link for the user in the specified format
+   * @description This method returns the payment link for the user in the specified format. Only for TON currency
    *
    * @param format - the deeplink format: "ton" (default) or "tonkeeper"
    *
@@ -177,6 +238,18 @@ export class Invoice {
 
   async isActive(): Promise<boolean> {
     return this.openedContract.getInvoiceActive();
+  }
+
+  async acceptsJetton(): Promise<boolean> {
+    return this.openedContract.getInvoiceAcceptsJetton();
+  }
+
+  async getJettonMasterAddress(): Promise<Address> {
+    return this.openedContract.getInvoiceJettonMasterAddress();
+  }
+
+  async getJettonWalletCode(): Promise<Cell> {
+    return this.openedContract.getInvoiceJettonWalletCode();
   }
 
   async getVersion(): Promise<number> {
