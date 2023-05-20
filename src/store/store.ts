@@ -316,7 +316,13 @@ export class Store {
   getRequestPurchaseLink(
     invoice: PurchaseRequestInvoice,
     format: DeeplinkFormat = "ton"
-  ) {
+  ): string {
+    if (invoice.currency !== Currencies.TON) {
+      throw new Error(
+        "Only TON currency is supported for purchase request links"
+      );
+    }
+
     return buildUserPaymentLink(
       this.wrapper.address.toString(),
       invoice.amount,
