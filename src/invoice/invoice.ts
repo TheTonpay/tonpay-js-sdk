@@ -22,6 +22,7 @@ export const InvoiceFees = {
   EDIT: toNano("0.005"),
   ACTIVATE: toNano("0.005"),
   DEACTIVATE: toNano("0.005"),
+  PAY_WITH_JETTONS: toNano("0.6"),
 };
 
 export class Invoice {
@@ -117,40 +118,40 @@ export class Invoice {
   /**
    * @description This method pays the invoice
    *
-   * @param {number} amount - Amount in TON, not nanoTON
    * @param {string} customerAddress - Address of the customer that will pay the invoice. Required if currency is not TON and invoice has no assigned customer
-   * @param {Currency} currency - Currency to pay with. Default is TON
    *
    * @example
    * ```typescript
-   * await invoice.pay(6.9);
+   * await invoice.pay();
    * ```
    *
    * @example
    * ```typescript
-   * await invoice.pay(6.9, "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N", Currencies.jUSDT);
+   * // invoice with token currency and no customer
+   * await invoice.pay("EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N");
    * ```
    */
-  async pay(
-    amount: number,
-    customerAddress?: string,
-    currency: Currency = Currencies.TON
-  ) {
-    if (!Object.values(Currencies).includes(currency)) {
-      throw new Error("Currency is not supported");
-    }
+  async pay(customerAddress?: string) {
+    const invoiceData = await this.getData();
+
+    const currency =
+      Currencies[
+        (Object.keys(Currencies).find(
+          (c) =>
+            Currencies[c as keyof typeof Currencies].address ===
+            invoiceData.jettonMasterAddress
+        ) as keyof typeof Currencies) || "TON"
+      ];
 
     if (currency == Currencies.TON) {
       await this.openedContract.sendPayInvoice(this.sender, {
-        value: toNano(amount.toString()),
+        value: BigInt(invoiceData.amount),
         message: buildPayInvoiceMessage(),
       });
       return;
     }
 
-    const ownData = await this.getData();
-
-    if (!ownData.hasCustomer) {
+    if (!invoiceData.hasCustomer) {
       if (!customerAddress) {
         throw new Error("Customer address is required");
       }
@@ -160,7 +161,7 @@ export class Invoice {
       }
     }
 
-    const userAddress = customerAddress || ownData.customer;
+    const userAddress = customerAddress || invoiceData.customer;
 
     const jettonWallet = this.tonClient.open(
       JettonWalletWrapper.createFromConfig(
@@ -174,9 +175,9 @@ export class Invoice {
       )
     );
     await jettonWallet.sendJettons(this.sender, {
-      value: toNano(amount.toString()),
+      value: InvoiceFees.PAY_WITH_JETTONS,
       message: buildPayInvoiceWithJettonsMessage(
-        BigInt(`${amount}`),
+        BigInt(invoiceData.amount),
         this.address
       ),
     });
