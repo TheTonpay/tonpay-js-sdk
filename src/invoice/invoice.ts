@@ -209,6 +209,18 @@ export class Invoice {
     );
   }
 
+  async getCurrency(): Promise<Currency> {
+    const invoiceData = await this.getData();
+
+    return Currencies[
+      (Object.keys(Currencies).find(
+        (c) =>
+          Currencies[c as keyof typeof Currencies].address ===
+          invoiceData.jettonMasterAddress
+      ) as keyof typeof Currencies) || "TON"
+    ];
+  }
+
   async getStore(): Promise<Address> {
     return this.openedContract.getInvoiceStore();
   }
