@@ -195,10 +195,15 @@ export class Invoice {
    * ```
    */
   async getPaymentLink(format: DeeplinkFormat = "ton"): Promise<string> {
-    const amount = await this.getAmount();
+    const invoiceData = await this.getData();
+
+    if (invoiceData.acceptsJetton) {
+      throw new Error("Payment link is not available for jetton invoices");
+    }
+
     return buildMessageDeeplink(
       this.wrapper.address,
-      BigInt(amount),
+      BigInt(invoiceData.amount),
       buildPayInvoiceMessage(),
       format
     );
