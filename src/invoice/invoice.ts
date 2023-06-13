@@ -49,6 +49,7 @@ export class Invoice {
    * @param invoiceId - New invoice ID
    * @param metadata - New invoice metadata
    * @param amount - New invoice amount in TON, not nanoTON!
+   * @param currency - New invoice currency
    *
    * @example
    * ```typescript
