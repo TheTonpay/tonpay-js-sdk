@@ -19,6 +19,7 @@ import {
   buildRequestPurchaseWithJettonsMessage,
   isAddress,
   precalculateInvoiceAddress,
+  buildUserPaymentWithJettonsLink,
 } from "@tonpay/core";
 import { TonClient } from "ton";
 import { Address, Cell, OpenedContract, Sender, toNano } from "ton-core";
@@ -297,12 +298,12 @@ export class Store {
   }
 
   /**
-   * @description This method returns the universal link for the purchase request by customer. Only for TON currency.
+   * @description This method returns the universal link for the purchase request by customer.
    *
-   * @param invoice {PurchaseRequestInvoice} - invoice info. Amount must be specified in TON, not nanoTON!
+   * @param invoice {PurchaseRequestInvoice} - invoice info.
    * @param format {DeeplinkFormat} - deeplink format. Default is "ton", can be "ton" or "tonkeeper"
    *
-   * @returns {string} Universal link for the purchase request
+   * @returns {string} Universal payment link for the purchase request
    *
    * @example
    * ```typescript
@@ -317,19 +318,48 @@ export class Store {
     invoice: PurchaseRequestInvoice,
     format: DeeplinkFormat = "ton"
   ): string {
-    if (invoice.currency !== Currencies.TON) {
-      throw new Error(
-        "Only TON currency is supported for purchase request links"
+    if (invoice.currency == Currencies.TON) {
+      return buildUserPaymentLink(
+        this.wrapper.address.toString(),
+        invoice.amount,
+        invoice.invoiceId,
+        Number(StoreFees.REQUEST_PURCHASE),
+        format
       );
     }
 
-    return buildUserPaymentLink(
+    if (!invoice.customer) {
+      throw new Error("Customer address is required for jetton payment requests");
+    }
+
+    if (!isAddress(invoice.customer)) {
+      throw new Error("Customer address is not a valid address");
+    }
+
+    const jettonWallet = this.tonClient.open(
+      JettonWalletWrapper.createFromConfig(
+        {
+          balance: 0,
+          masterAddress: invoice.currency.address,
+          ownerAddress: invoice.customer,
+          walletCode: invoice.currency.walletCode,
+        },
+        invoice.currency.walletCode
+      )
+    );
+
+    return buildUserPaymentWithJettonsLink(
       this.wrapper.address.toString(),
+      jettonWallet.address.toString(),
+      invoice.currency.address,
+      invoice.currency.walletCode,
+      invoice.currency.decimals,
       invoice.amount,
       invoice.invoiceId,
-      Number(StoreFees.REQUEST_PURCHASE),
+      invoice.metadata,
+      StoreFees.REQUEST_PURCHASE_JETTON,
       format
-    );
+    )
   }
 
   async applyUpdate(newStoreData: Cell | null) {
