@@ -7,7 +7,6 @@ import {
   buildActivateInvoiceMessage,
   buildDeactivateInvoiceMessage,
   buildEditInvoiceMessage,
-  buildMessageDeeplink,
   buildPayInvoiceMessage,
   buildPayInvoiceWithJettonsMessage,
   buildStorePaymentLink,
