@@ -10,6 +10,8 @@ import {
   buildMessageDeeplink,
   buildPayInvoiceMessage,
   buildPayInvoiceWithJettonsMessage,
+  buildStorePaymentLink,
+  buildStorePaymentWithJettonsLink,
   isAddress,
 } from "@tonpay/core";
 import { TonClient } from "ton";
@@ -185,9 +187,10 @@ export class Invoice {
   }
 
   /**
-   * @description This method returns the payment link for the user in the specified format. Only for TON currency
+   * @description This method returns the payment link for the user in the specified format
    *
    * @param format - the deeplink format: "ton" (default) or "tonkeeper"
+   * @param customer - the customer address. Required if currency is not TON and invoice has no assigned customer
    *
    * @returns payment link in the specified format
    *
@@ -196,29 +199,59 @@ export class Invoice {
    * const link = await invoice.getPaymentLink("tonkeeper");
    * ```
    */
-  async getPaymentLink(format: DeeplinkFormat = "ton"): Promise<string> {
+  async getPaymentLink(customer?: string, format: DeeplinkFormat = "ton"): Promise<string> {
     const invoiceData = await this.getData();
+    const currency = await this.getCurrency(invoiceData);
 
-    if (invoiceData.acceptsJetton) {
-      throw new Error("Payment link is not available for jetton invoices");
+    if (currency == Currencies.TON) {
+      return buildStorePaymentLink(
+        this.wrapper.address.toString(),
+        invoiceData.amount,
+        format
+      )
     }
 
-    return buildMessageDeeplink(
-      this.wrapper.address,
-      BigInt(invoiceData.amount),
-      buildPayInvoiceMessage(),
-      format
+    if (!invoiceData.hasCustomer) {
+      if (!customer) {
+        throw new Error("Customer address is required");
+      }
+
+      if (!isAddress(customer)) {
+        throw new Error("Customer address is not a TON address");
+      }
+    }
+
+    const userAddress = customer || invoiceData.customer;
+
+    const jettonWallet = this.tonClient.open(
+      JettonWalletWrapper.createFromConfig(
+        {
+          balance: 0,
+          masterAddress: currency.address,
+          ownerAddress: userAddress,
+          walletCode: currency.walletCode,
+        },
+        currency.walletCode
+      )
     );
+
+    return buildStorePaymentWithJettonsLink(
+      this.wrapper.address.toString(),
+      Number(InvoiceFees.PAY_WITH_JETTONS),
+      invoiceData.amount,
+      jettonWallet.address.toString(),
+      format
+    )
   }
 
-  async getCurrency(): Promise<Currency> {
-    const invoiceData = await this.getData();
+  async getCurrency(invoiceData: InvoiceData | null): Promise<Currency> {
+    if (!invoiceData) invoiceData = await this.getData();
 
     return Currencies[
       (Object.keys(Currencies).find(
         (c) =>
           Currencies[c as keyof typeof Currencies].address ===
-          invoiceData.jettonMasterAddress
+          invoiceData!.jettonMasterAddress
       ) as keyof typeof Currencies) || "TON"
     ];
   }
