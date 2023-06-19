@@ -13,24 +13,24 @@ export * from "./currency/wallets";
 
 export class Tonpay {
   private tonClient: TonClient;
-  private sender: Sender;
+  private sender?: Sender;
 
-  private constructor(tonClient: TonClient, sender: Sender) {
+  private constructor(tonClient: TonClient, sender?: Sender) {
     this.tonClient = tonClient;
     this.sender = sender;
   }
 
-  public static async create(network: TonNetwork, sender: Sender) {
+  public static async create(network: TonNetwork, sender?: Sender) {
     const endpoint = await getHttpEndpoint({ network: network });
     const tonClient = new TonClient({ endpoint });
     return new Tonpay(tonClient, sender);
   }
 
   public getStore(address: string) {
-    return new Store(address, this.sender, this.tonClient);
+    return new Store(address, this.tonClient, this.sender);
   }
 
   public getInvoice(address: string) {
-    return new Invoice(address, this.sender, this.tonClient);
+    return new Invoice(address, this.tonClient, this.sender);
   }
 }

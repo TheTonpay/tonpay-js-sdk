@@ -41,13 +41,13 @@ export const StoreFees = {
 
 export class Store {
   private wrapper: StoreWrapper;
-  private sender: Sender;
+  private sender?: Sender;
   private openedContract: OpenedContract<StoreWrapper>;
   private tonClient: TonClient;
 
   public address: string;
 
-  public constructor(address: string, sender: Sender, tonClient: TonClient) {
+  public constructor(address: string, tonClient: TonClient, sender?: Sender, ) {
     this.wrapper = StoreWrapper.createFromAddress(Address.parse(address));
     this.address = address;
     this.sender = sender;
@@ -56,6 +56,10 @@ export class Store {
   }
 
   async create(config: StoreConfig) {
+    if (!this.sender) {
+      throw Error("This store is read-only. Pass the sender to the constructor to make changes.")
+    }
+
     this.wrapper = StoreWrapper.createFromConfig(
       config,
       Cell.fromBase64(STORE_CODE)
@@ -94,6 +98,10 @@ export class Store {
     webhook: string,
     mccCode: number
   ) {
+    if (!this.sender) {
+      throw Error("This store is read-only. Pass the sender to the constructor to make changes.")
+    }
+    
     await this.openedContract.sendEditStore(this.sender, {
       value: StoreFees.EDIT,
       message: buildEditStoreMessage(
@@ -116,6 +124,10 @@ export class Store {
    * ```
    */
   async activate() {
+    if (!this.sender) {
+      throw Error("This store is read-only. Pass the sender to the constructor to make changes.")
+    }
+    
     await this.openedContract.sendActivateStore(this.sender, {
       value: StoreFees.ACTIVATE,
       message: buildActivateStoreMessage(),
@@ -132,6 +144,10 @@ export class Store {
    * ```
    */
   async deactivate() {
+    if (!this.sender) {
+      throw Error("This store is read-only. Pass the sender to the constructor to make changes.")
+    }
+    
     await this.openedContract.sendActivateStore(this.sender, {
       value: StoreFees.DEACTIVATE,
       message: buildDeactivateStoreMessage(),
@@ -158,6 +174,10 @@ export class Store {
    * ```
    */
   async issueInvoice(invoice: InvoiceInfo): Promise<Invoice> {
+    if (!this.sender) {
+      throw Error("This store is read-only. Pass the sender to the constructor to make changes.")
+    }
+    
     await this.openedContract.sendIssueInvoice(this.sender, {
       value: StoreFees.ISSUE_INVOICE,
       message: buildIssueInvoiceMessage(
@@ -186,8 +206,8 @@ export class Store {
         invoice.currency.address,
         invoice.currency.walletCode
       ).toString(),
-      this.sender,
-      this.tonClient
+      this.tonClient,
+      this.sender
     );
   }
 
@@ -219,6 +239,10 @@ export class Store {
    * });
    */
   async requestPurchase(invoice: PurchaseRequestInvoice): Promise<Invoice> {
+    if (!this.sender) {
+      throw Error("This store is read-only. Pass the sender to the constructor to make changes.")
+    }
+    
     const merchantAddress = await this.getOwner();
 
     if (invoice.currency == Currencies.TON) {
@@ -243,8 +267,8 @@ export class Store {
           invoice.currency.address,
           invoice.currency.walletCode
         ).toString(),
-        this.sender,
-        this.tonClient
+        this.tonClient,
+        this.sender
       );
     }
 
@@ -292,8 +316,8 @@ export class Store {
         invoice.currency.address,
         invoice.currency.walletCode
       ).toString(),
-      this.sender,
-      this.tonClient
+      this.tonClient,
+      this.sender
     );
   }
 
@@ -363,6 +387,10 @@ export class Store {
   }
 
   async applyUpdate(newStoreData: Cell | null) {
+    if (!this.sender) {
+      throw Error("This store is read-only. Pass the sender to the constructor to make changes.")
+    }
+    
     await this.openedContract.sendFullCodeUpgrade(this.sender, {
       value: StoreFees.FULL_UPGRADE,
       message: buildFullCodeUpgradeMessage(
@@ -375,6 +403,10 @@ export class Store {
   }
 
   async applyInvoiceUpdate() {
+    if (!this.sender) {
+      throw Error("This store is read-only. Pass the sender to the constructor to make changes.")
+    }
+    
     await this.openedContract.sendInvoiceCodeUpgrade(this.sender, {
       value: StoreFees.INVOICE_UPGRADE,
       message: buildInvoiceCodeUpgradeMessage(Cell.fromBase64(INVOICE_CODE)),

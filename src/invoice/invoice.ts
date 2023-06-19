@@ -28,13 +28,13 @@ export const InvoiceFees = {
 
 export class Invoice {
   private wrapper: InvoiceWrapper;
-  private sender: Sender;
+  private sender?: Sender;
   private openedContract: OpenedContract<InvoiceWrapper>;
   private tonClient: TonClient;
 
   public address: string;
 
-  public constructor(address: string, sender: Sender, tonClient: TonClient) {
+  public constructor(address: string, tonClient: TonClient, sender?: Sender) {
     this.wrapper = InvoiceWrapper.createFromAddress(Address.parse(address));
     this.address = address;
     this.sender = sender;
@@ -72,6 +72,10 @@ export class Invoice {
     amount: number,
     currency: Currency
   ) {
+    if (!this.sender) {
+      throw Error("This invoice is read-only. Pass the sender to the constructor to make changes.")
+    }
+
     await this.openedContract.sendEditInvoice(this.sender, {
       value: InvoiceFees.EDIT,
       message: buildEditInvoiceMessage(
@@ -96,6 +100,10 @@ export class Invoice {
    * ```
    */
   async activate() {
+    if (!this.sender) {
+      throw Error("This invoice is read-only. Pass the sender to the constructor to make changes.")
+    }
+
     await this.openedContract.sendActivateInvoice(this.sender, {
       value: InvoiceFees.ACTIVATE,
       message: buildActivateInvoiceMessage(),
@@ -111,6 +119,9 @@ export class Invoice {
    * ```
    */
   async deactivate() {
+    if (!this.sender) {
+      throw Error("This invoice is read-only. Pass the sender to the constructor to make changes.")
+    }
     await this.openedContract.sendActivateInvoice(this.sender, {
       value: InvoiceFees.DEACTIVATE,
       message: buildDeactivateInvoiceMessage(),
@@ -134,6 +145,10 @@ export class Invoice {
    * ```
    */
   async pay(customerAddress?: string) {
+    if (!this.sender) {
+      throw Error("This invoice is read-only. Pass the sender to the constructor to make changes.")
+    }
+
     const invoiceData = await this.getData();
 
     const currency =
