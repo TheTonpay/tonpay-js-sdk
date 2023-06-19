@@ -386,6 +386,43 @@ export class Store {
     )
   }
 
+  async getPurchaseRequestInvoice(invoice: PurchaseRequestInvoice) {
+    if (!invoice.invoiceId) {
+      throw new Error("Invoice ID is required");
+    }
+  
+    if (invoice.invoiceId.length > 120) {
+      throw new Error("Invoice ID must not be longer than 120 characters");
+    }
+  
+    if (invoice.metadata && invoice.metadata.length > 500) {
+      throw new Error("Metadata must not be longer than 500 characters");
+    }
+  
+    if (invoice.amount <= 0) {
+      throw new Error("Amount must be greater than 0");
+    }
+
+    const merchantAddress = await this.getOwner();
+
+    new Invoice(
+      precalculateInvoiceAddress(
+        this.wrapper.address.toString(),
+        merchantAddress.toString(),
+        false,
+        ZERO_ADDRESS,
+        invoice.invoiceId,
+        invoice.metadata ?? "",
+        invoice.amount * Math.pow(10, invoice.currency.decimals),
+        true,
+        invoice.currency.address,
+        invoice.currency.walletCode
+      ).toString(),
+      this.tonClient,
+      this.sender
+    );
+  }
+
   async applyUpdate(newStoreData: Cell | null) {
     if (!this.sender) {
       throw Error("This store is read-only. Pass the sender to the constructor to make changes.")
