@@ -33,7 +33,7 @@ export const StoreFees = {
   ACTIVATE: toNano("0.005"),
   DEACTIVATE: toNano("0.005"),
   ISSUE_INVOICE: toNano("0.042"),
-  REQUEST_PURCHASE: toNano("0.05"),
+  REQUEST_PURCHASE: toNano("0.055"),
   FULL_UPGRADE: toNano("0.006"),
   INVOICE_UPGRADE: toNano("0.006"),
   REQUEST_PURCHASE_JETTON: toNano("0.6"),
