@@ -405,7 +405,7 @@ export class Store {
 
     const merchantAddress = await this.getOwner();
 
-    new Invoice(
+    return new Invoice(
       precalculateInvoiceAddress(
         this.wrapper.address.toString(),
         merchantAddress.toString(),
