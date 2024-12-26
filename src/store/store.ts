@@ -348,6 +348,7 @@ export class Store {
         invoice.amount,
         invoice.invoiceId,
         Number(StoreFees.REQUEST_PURCHASE),
+        invoice.metadata,
         format
       );
     }
